@@ -160,22 +160,29 @@ function calcCircleIntersection(c1, c2) {
     new Point(x2, y2_2),
   ];
 
-  const solutionSet = potentialCoords.filter((pt, ind, arr) => {
+  const solSet = potentialCoords.filter((pt, ind, arr) => {
     const { x, y } = pt;
     //keep the ones that satisfy x^2 + y^2 = r^2 and the other equation
     const eq1 = (a, b) => a ** 2 + b ** 2 === c1.radius ** 2;
     const eq2 = (a, b) => (a - p1) ** 2 + (b - p2) ** 2 === c2.radius ** 2;
-    return eq1(x, y) && eq2(x, y) && arr.indexOf(pt) === ind;
+    let isNotSeen = ind === arr.findIndex(pt2 => x === pt2.x && y === pt2.y)
+    return eq1(x, y) && eq2(x, y) && isNotSeen;
   });
 
-  console.log('Solution set ==> ', solutionSet);
+
+
+  console.log('Solution set ==> ', solSet);
+  const sol = solSet.reduce((acc, nxt, ind) => {
+    return { ...acc, ...{[`p${ind}`]:nxt} }
+  },{})
+  console.log("0000 ==> ",sol);
 
   console.log(`(x1,y1) => (${x1},${y1_1})`);
   console.log(`(x1,y1) => (${x1},${y1_2})`);
   console.log(`(x2,y2) => (${x2},${y2_1})`);
   console.log(`(x2,y2) => (${x2},${y2_2})`);
 
-  return { p0: new Point(x1, y1_1), p1: new Point(x2, y2_2) };
+  return sol;
 }
 
 // calculate and locate intersection points
@@ -207,7 +214,8 @@ drawCircle(c1.center.x, c1.center.y, c1.radius);
 
 const { p0, p1 } = calcCircleIntersection(c0, c1);
 const dist = distance(p0, p1);
-console.log(dist);
+console.log("dist in units = ",dist);
+console.log("dist in pixles = ",dist*unit);
 
 function drawLine(p0, p1) {
   console.log('<><><>', p0, p1);
@@ -222,3 +230,16 @@ function drawLine(p0, p1) {
 }
 
 drawLine(p0, p1);
+
+// calculate area of intersecting circles
+// first circle (x1,y1) and r1, chord dist = d, 
+
+const d = dist;
+const th1 = Math.asin(d/(2*c0.radius)) * 2;
+const a1 = (th1 * c0.radius**2)/2;
+const a2 = (d/2) * Math.sqrt(c0.radius**2 - (0.5*d)**2)
+
+console.log(`area in units sq ${a1+a2}`);
+console.log(`area in pixles sq ${(a1+a2)*30*30}`);
+
+//shade all the overlapping pixles
