@@ -155,35 +155,36 @@ function drawCircle(x, y, r) {
   ctx.stroke();
 }
 
-function drawCircle2(
-  c,
-  config = {frm = 0,
-  to = Math.PI * 2,
-  color = 'black',
-  counterClockwise = false}
-) {
-  const drawCir = function (
-    x,
-    y,
-    r,
-    frm = config.frm,
-    to = config.to,
-    color = config.color,
-    counterClockwise = config.counterClockwise
-  ) {
+function drawCircle2(c, config) {
+  const _default = {
+    from: 0,
+    to: Math.PI * 2,
+    color: 'black',
+    counterClockwise: false,
+  };
+  const newConfig = { ..._default, ...config };
+  const drawCir = function (x, y, r, from, to, color, counterClockwise) {
     //print the center
     putPoint(x, y);
     //draw the circle
     ctx.beginPath();
     const transformedPt = transformPt(new Point(x, y));
     const c = new Circle(transformedPt.x, transformedPt.y, scaleLen(r));
-    ctx.arc(c.center.x, c.center.y, c.radius, frm, to, counterClockwise);
+    ctx.arc(c.center.x, c.center.y, c.radius, from, to, counterClockwise);
     ctx.strokeWidth = 1;
     ctx.strokeStyle = color;
     ctx.stroke();
   };
 
-  drawCir(c.center.x, c.center.y, c.radius, frm, to, color);
+  drawCir(
+    c.center.x,
+    c.center.y,
+    c.radius,
+    newConfig.from,
+    newConfig.to,
+    newConfig.color,
+    newConfig.counterClockwise
+  );
 }
 
 function applyVector(point, vector) {
@@ -364,9 +365,13 @@ function shadeOverlap(c0, c1, p0, p1) {
 
 // shadeOverlap(c0, c1, p0, p1);
 const cc = new Circle(0, 0, 1);
-let conf = {frm:Math.atan(-0.4358898943540673/0.9), to:Math.atan(-0.4358898943540673/-0.9)+Math.PI, counterClockwise=true}
-drawCircle2(cc, );
-console.log(cc.f(0.9))
-console.log(Math.atan(0.4358898943540673/0.9)*(180/Math.PI)  )
-console.log(cc.f(-0.9))
-console.log(Math.atan(0.4358898943540673/-0.9)*(180/Math.PI) + 180  )
+let conf = {
+  from: Math.atan(-0.4358898943540673 / 0.9),
+  to: Math.atan(-0.4358898943540673 / -0.9) + Math.PI,
+  counterClockwise: true,
+};
+drawCircle2(cc, conf);
+// console.log(cc.f(0.9))
+// console.log(Math.atan(0.4358898943540673/0.9)*(180/Math.PI)  )
+// console.log(cc.f(-0.9))
+// console.log(Math.atan(0.4358898943540673/-0.9)*(180/Math.PI) + 180  )
