@@ -95,6 +95,15 @@ class Circle {
     return [new Point(x, y0), new Point(x, y1)];
   }
 
+  getData() {
+    return {
+      max: applyVector(this.center, new Vector(0, this.radius)),
+      min: applyVector(this.center, new Vector(0, -this.radius)),
+      left: applyVector(this.center, new Vector(-this.radius, 0)),
+      right: applyVector(this.center, new Vector(this.radius, 0)),
+    };
+  }
+
   prtEqn() {
     const plus = (n) => (-n > 0 ? `+${-n}` : `${-n}`);
     return `(x${plus(this.center.x)})^2 + (y${plus(this.center.y)})^2 = ${
@@ -144,6 +153,37 @@ function drawCircle(x, y, r) {
   ctx.strokeWidth = 1;
   ctx.strokeStyle = 'black';
   ctx.stroke();
+}
+
+function drawCircle2(
+  c,
+  config = {frm = 0,
+  to = Math.PI * 2,
+  color = 'black',
+  counterClockwise = false}
+) {
+  const drawCir = function (
+    x,
+    y,
+    r,
+    frm = config.frm,
+    to = config.to,
+    color = config.color,
+    counterClockwise = config.counterClockwise
+  ) {
+    //print the center
+    putPoint(x, y);
+    //draw the circle
+    ctx.beginPath();
+    const transformedPt = transformPt(new Point(x, y));
+    const c = new Circle(transformedPt.x, transformedPt.y, scaleLen(r));
+    ctx.arc(c.center.x, c.center.y, c.radius, frm, to, counterClockwise);
+    ctx.strokeWidth = 1;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  };
+
+  drawCir(c.center.x, c.center.y, c.radius, frm, to, color);
 }
 
 function applyVector(point, vector) {
@@ -238,8 +278,8 @@ const { c0, c1 } = translateCirclesToOrigin(
   new Circle(2, -1, 2)
 );
 
-drawCircle(c0.center.x, c0.center.y, c0.radius);
-drawCircle(c1.center.x, c1.center.y, c1.radius);
+// drawCircle(c0.center.x, c0.center.y, c0.radius);
+// drawCircle(c1.center.x, c1.center.y, c1.radius);
 
 const { p0, p1 } = calcCircleIntersection(c0, c1);
 const dist = distance(p0, p1);
@@ -258,7 +298,7 @@ function drawLine(p0, p1) {
   ctx.stroke();
 }
 
-drawLine(p0, p1);
+// drawLine(p0, p1);
 
 // calculate area of intersecting circles
 // first circle (x1,y1) and r1, chord dist = d,
@@ -312,7 +352,7 @@ function shadeOverlap(c0, c1, p0, p1) {
           pt.y >= p0.y && pt.y <= p1.y
         }`
       );
-      putPoint(pt.x, pt.y, 'blue', 4);
+      // putPoint(pt.x, pt.y, 'blue', 4);
       return pt.y >= p0.y && pt.y <= p1.y;
     })
   );
@@ -322,4 +362,11 @@ function shadeOverlap(c0, c1, p0, p1) {
   // console.log(y1list);
 }
 
-shadeOverlap(c0, c1, p0, p1);
+// shadeOverlap(c0, c1, p0, p1);
+const cc = new Circle(0, 0, 1);
+let conf = {frm:Math.atan(-0.4358898943540673/0.9), to:Math.atan(-0.4358898943540673/-0.9)+Math.PI, counterClockwise=true}
+drawCircle2(cc, );
+console.log(cc.f(0.9))
+console.log(Math.atan(0.4358898943540673/0.9)*(180/Math.PI)  )
+console.log(cc.f(-0.9))
+console.log(Math.atan(0.4358898943540673/-0.9)*(180/Math.PI) + 180  )
