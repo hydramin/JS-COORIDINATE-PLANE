@@ -299,6 +299,29 @@ function drawLine(p0, p1) {
   ctx.stroke();
 }
 
+function pointToAngleRad(pt, toDegree = false) {
+  const getQuadrant = (x, y) => {
+    if (x > 0 && y > 0) {
+      // 1st is 4th
+      return 2 * Math.PI;
+    } else if (x < 0 && y < 0) {
+      // 3rd is 2nd
+      return Math.PI;
+    } else if (x > 0 && y < 0) {
+      // 4th is 1st
+      return 0;
+    } else if (x < 0 && y > 0) {
+      // 2nd is 3rd
+      return Math.PI;
+    }
+  };
+
+  const modifier = pt.x < 0 && pt.y < 0 ? -1 : 1;
+
+  const inRad = modifier * Math.atan(pt.x, pt.y) + getQuadrant(pt.x, pt.y);
+  return !toDegree ? inRad : inRad * (180 / Math.PI);
+}
+
 // drawLine(p0, p1);
 
 // calculate area of intersecting circles
@@ -365,13 +388,21 @@ function shadeOverlap(c0, c1, p0, p1) {
 
 // shadeOverlap(c0, c1, p0, p1);
 const cc = new Circle(0, 0, 1);
+const fst = new Point(0.9, 0.4358898943540673);
+const snd = new Point(-0.9, 0.4358898943540673);
+const trd = new Point(-0.9, -0.4358898943540673);
+const frz = new Point(0.9, -0.4358898943540673);
 let conf = {
-  from: Math.atan(-0.4358898943540673 / 0.9),
-  to: Math.atan(-0.4358898943540673 / -0.9) + Math.PI,
+  from: pointToAngleRad(fst),
+  to: pointToAngleRad(snd),
   counterClockwise: true,
 };
 drawCircle2(cc, conf);
 // console.log(cc.f(0.9))
-// console.log(Math.atan(0.4358898943540673/0.9)*(180/Math.PI)  )
-// console.log(cc.f(-0.9))
-// console.log(Math.atan(0.4358898943540673/-0.9)*(180/Math.PI) + 180  )
+console.log('fst == ==>', pointToAngleRad(fst, true));
+console.log('snd == ==>', pointToAngleRad(snd, true));
+console.log('trd == ==>', pointToAngleRad(trd, true));
+console.log('frz == ==>', pointToAngleRad(frz, true));
+
+console.log(0);
+console.log(Math.atan(0.4358898943540673 / -0.9) * (180 / Math.PI) + 180);
