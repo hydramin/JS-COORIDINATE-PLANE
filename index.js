@@ -3,6 +3,7 @@
 import './style.css';
 
 // Write Javascript code!
+/*Defining the coordinate system unit length*/
 const unit = 30;
 const xmax = unit * 12;
 const ymax = unit * 12;
@@ -13,7 +14,7 @@ canvas.height = ymax;
 
 const ctx = canvas.getContext('2d');
 
-// draw the x and y lines
+/* Draw the x and y coordinates */
 ctx.beginPath();
 ctx.moveTo(0, ymax / 2);
 ctx.lineTo(xmax, ymax / 2);
@@ -22,6 +23,7 @@ ctx.moveTo(xmax / 2, 0);
 ctx.lineTo(xmax / 2, ymax);
 ctx.stroke();
 
+/* put the tick marks for each unit, horizontally and vertically */
 function htick(xo, yo) {
   ctx.beginPath();
   ctx.moveTo(xo, yo);
@@ -53,6 +55,7 @@ for (let i = 0; i <= xmax; i += unit) {
 
 const origin = { x: xmax / 2, y: ymax / 2 };
 
+/* represents a point in the coordinate system, not on the canvas  */
 class Point {
   constructor(x, y) {
     this.x = x;
@@ -68,6 +71,7 @@ class Point {
   }
 }
 
+/* represents a circle on the 2d coordinate system */
 class Circle {
   constructor(x, y, r) {
     this.center = new Point(x, y);
@@ -86,7 +90,7 @@ class Circle {
     };
   }
 
-  // gives y0 and y1 (absent for left and right tangent points)
+  // gives y0 and y1 (absent for left and right tangent points, a circle has 2 values for a given x in its domain)
   f(x) {
     const y0 =
       Math.sqrt(this.radius ** 2 - (x - this.center.x) ** 2) + this.center.y;
@@ -95,6 +99,7 @@ class Circle {
     return [new Point(x, y0), new Point(x, y1)];
   }
 
+  /* fetches the range and domain of the circle as a Point */
   getData() {
     return {
       max: applyVector(this.center, new Vector(0, this.radius)),
@@ -104,6 +109,7 @@ class Circle {
     };
   }
 
+  /* prints the equation of the circle */
   prtEqn() {
     const plus = (n) => (-n > 0 ? `+${-n}` : `${-n}`);
     return `(x${plus(this.center.x)})^2 + (y${plus(this.center.y)})^2 = ${
@@ -112,6 +118,7 @@ class Circle {
   }
 }
 
+/* Represents a vector */
 class Vector {
   constructor(x, y) {
     this.x = x;
@@ -119,14 +126,19 @@ class Vector {
   }
 }
 
+/* scales a given length on the coordinate system to the actual pixle length
+ln is length on the coordinate system, not a pixle length */
 function scaleLen(ln) {
   return ln * unit;
 }
 
+/* given a point on the coordinate system it locates the actual pixle location on the canvas
+with respect to the origin of the coordinate system */
 function transformPt(pt) {
   return new Point(origin.x + pt.x * unit, origin.y - pt.y * unit);
 }
 
+/* draws a point on the coordinate system */
 function putPoint(x, y, color = 'red', size = 1) {
   ctx.beginPath();
   const pt = transformPt(new Point(x, y));
@@ -136,26 +148,14 @@ function putPoint(x, y, color = 'red', size = 1) {
   ctx.stroke();
 }
 
-// putPoint(1, 1);
-// putPoint(-1, 1);
-// putPoint(1, -1);
-// putPoint(-1, -1);
-// putPoint(0, 0);
-
-function drawCircle(x, y, r) {
-  //print the center
-  putPoint(x, y);
-  //draw the circle
-  ctx.beginPath();
-  const transformedPt = transformPt(new Point(x, y));
-  const c = new Circle(transformedPt.x, transformedPt.y, scaleLen(r));
-  ctx.arc(c.center.x, c.center.y, c.radius, 0, 2 * Math.PI);
-  ctx.strokeWidth = 1;
-  ctx.strokeStyle = 'black';
-  ctx.stroke();
-}
-
-function drawCircle2(c, config) {
+/* Given a Circle object it draws the circle in the coordinate system
+config - is used to customize the circle:
+    from: 0,                -> Starting angle in radian
+    to: Math.PI * 2,        -> Ending angle in radian
+    color: 'black',         -> Stroke color
+    counterClockwise: false -> Stroke direction
+ */
+function drawCircle(c, config) {
   const _default = {
     from: 0,
     to: Math.PI * 2,
@@ -187,35 +187,50 @@ function drawCircle2(c, config) {
   );
 }
 
+/* given a Point object and a Vector object, it moves the point by the vector specified */
 function applyVector(point, vector) {
-  // console.log(circle, vector);
   const x = point.x + vector.x;
   const y = point.y + vector.y;
   return new Point(x, y);
 }
 
-// drawCircle(1, 1, 1);
-// drawCircle(2, -1, 2);
+/*Given two circles on the coordinate plane, it translates one circle to the origin and 
+translate the other circle by the vector used to translate the first circle
+returns object {c0:Circle, c1:Circle, vr: Vector}, where c0 is the one on the origin, vr is the reverse vector
+translating one circle to the origin allows easy calculation of  the intersection points*/
+function translateCirclesToOrigin(c1, c2) {
+  //translate circles to origin with vector using c1 as ref
+  const v = new Vector(-c1.center.x, -c1.center.y);
+  const vr = new Vector(c1.center.x, c1.center.y);
+  // translate to origin
+  // const vb = new Vector(c1.x, c1.y);
+  // back to original location
+  // transform circles by first vector
+  const newCenter = applyVector(c1.center, v);
+  const newCircle = new Circle(newCenter.x, newCenter.y, c1.radius);
+  const newCenter2 = applyVector(c2.center, v);
+  const newCircle2 = new Circle(newCenter2.x, newCenter2.y, c2.radius);
 
-function calcCircleIntersection(c1, c2) {
-  // console.log(`calc intersection (c1, c2) =>`, c1, c2);
-  //takes the scaled up and translated circle
-  //one of the circles (c1) must be at (0,0)
-  const p1 = c2.center.x;
-  const p2 = c2.center.y;
-  const r1 = c1.radius;
-  const r2 = c2.radius;
+  return { c0: newCircle, c1: newCircle2, vr: vr };
+}
+
+/* Calculates and spits out the intersection points of two intersecting circles
+For now function does not accomodate inscribed circle and tangent circle
+returns object {p0:Point, p1:Point} sorted on their x value*/
+function calcCircleIntersection(circle1, circle2) {
+  const { c0, c1, vr } = translateCirclesToOrigin(circle1, circle2);
+  console.log(`asdf`)
+  const p1 = c1.center.x;
+  const p2 = c1.center.y;
+  const r1 = c0.radius;
+  const r2 = c1.radius;
   const q = p1 ** 2 + p2 ** 2 + r1 ** 2 - r2 ** 2;
-  // console.log('constants --> ', p1, p2, r1, r2, q);
-
   //calculate quadratic coefficients
   const a = p1 ** 2 / p2 ** 2 + 1;
   const b = -((q * p1) / p2 ** 2);
   const c = (q / (2 * p2)) ** 2 - r1 ** 2;
-  // console.log(a, b, c);
 
   const discrimenant = b ** 2 - 4 * a * c;
-  // console.log('discriminant ==> ' + discrimenant);
   const x1 = (-b + Math.sqrt(discrimenant)) / (2 * a);
   const x2 = (-b - Math.sqrt(discrimenant)) / (2 * a);
 
@@ -235,60 +250,29 @@ function calcCircleIntersection(c1, c2) {
   const solSet = potentialCoords.filter((pt, ind, arr) => {
     const { x, y } = pt;
     //keep the ones that satisfy x^2 + y^2 = r^2 and the other equation
-    const eq1 = (a, b) => a ** 2 + b ** 2 === c1.radius ** 2;
-    const eq2 = (a, b) => (a - p1) ** 2 + (b - p2) ** 2 === c2.radius ** 2;
+    const eq1 = (a, b) => {/*console.log(`a -> ${a}, b -> ${b}`);*/return a ** 2 + b ** 2 === r1 ** 2};
+    const eq2 = (a, b) => {console.log(`a -> ${a}, p1 -> ${p1}, b -> ${b}, p2 -> ${p2}`);return (a - p1) ** 2 + (b - p2) ** 2 === r2 ** 2};
     let isNotSeen = ind === arr.findIndex((pt2) => x === pt2.x && y === pt2.y);
     return eq1(x, y) && eq2(x, y) && isNotSeen;
   });
 
-  // console.log('Solution set ==> ', solSet);
+  // loops through list of points and creates the object key dynamically
   const sol = solSet.reduce((acc, nxt, ind) => {
-    return { ...acc, ...{ [`p${ind}`]: nxt } };
+    const _nxt = applyVector(nxt, vr);
+    return { ...acc, ...{ [`p${ind}`]: _nxt } };
   }, {});
-  // console.log('0000 ==> ', sol);
-
-  // console.log(`(x1,y1) => (${x1},${y1_1})`);
-  // console.log(`(x1,y1) => (${x1},${y1_2})`);
-  // console.log(`(x2,y2) => (${x2},${y2_1})`);
-  // console.log(`(x2,y2) => (${x2},${y2_2})`);
-  // console.log(sol)
   return sol;
+  //===========================================================
 }
 
-// calculate and locate intersection points
-function translateCirclesToOrigin(c1, c2) {
-  //translate circles to origin with vector using c1 as ref
-  const v = new Vector(-c1.center.x, -c1.center.y); // translate to origin
-  // const vb = new Vector(c1.x, c1.y); // back to original location
-  // transform circles by first vector
-  const newCenter = applyVector(c1.center, v);
-  const newCircle = new Circle(newCenter.x, newCenter.y, c1.radius);
-  const newCenter2 = applyVector(c2.center, v);
-  const newCircle2 = new Circle(newCenter2.x, newCenter2.y, c2.radius);
-
-  return { c0: newCircle, c1: newCircle2 };
-}
-
+/*Calculates the distance between two points*/
 function distance(p1, p2) {
   const d = Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
   return d;
 }
 
-const { c0, c1 } = translateCirclesToOrigin(
-  new Circle(1, 1, 1),
-  new Circle(2, -1, 2)
-);
-
-// drawCircle(c0.center.x, c0.center.y, c0.radius);
-// drawCircle(c1.center.x, c1.center.y, c1.radius);
-
-const { p0, p1 } = calcCircleIntersection(c0, c1);
-const dist = distance(p0, p1);
-// console.log('dist in units = ', dist);
-// console.log('dist in pixles = ', dist * unit);
-
+/*Draws a line between two points*/
 function drawLine(p0, p1) {
-  // console.log('<><><>', p0, p1);
   const _p0 = transformPt(p0);
   const _p1 = transformPt(p1);
   ctx.beginPath();
@@ -299,214 +283,121 @@ function drawLine(p0, p1) {
   ctx.stroke();
 }
 
-
-
-// drawLine(p0, p1);
-
 // calculate area of intersecting circles
-// first circle (x1,y1) and r1, chord dist = d,
+// assumes the circles are intersecting at 2 points
+// takes the p1,p2, intersection points of the circles and c0,c1 two circles.
+function intersectionArea(p1, p2, c0, c1) {
+  const d = distance(p1, p2);
 
-const d = dist;
-const th1 = Math.asin(d / (2 * c0.radius)) * 2;
-const a1 = (th1 * c0.radius ** 2) / 2;
-const a2 = (d / 2) * Math.sqrt(c0.radius ** 2 - (0.5 * d) ** 2);
+  const partialArea = (c) => {
+    const th1 = Math.asin(d / (2 * c.radius)) * 2;
+    const sectorArea = (th1 * c.radius ** 2) / 2;
+    const triangleArea = (d / 2) * Math.sqrt(c.radius ** 2 - (0.5 * d) ** 2);
+    const at = sectorArea - triangleArea;
+  };
 
-// console.log(`area in units sq ${a1 + a2}`);
-// console.log(`area in pixles sq ${(a1 + a2) * 30 * 30}`);
-
-//shade all the overlapping pixles, assume p0.x < p1.x
-function shadeOverlap1(c0, c1, p0, p1) {
-  // console.log('input >>>', c0, c1, p0, p1);
-  const div = 4;
-  // transform points and the circles to pixle representation
-  // const _p0 = transformPt(p0);
-  // const _p1 = transformPt(p1);
-  // const _c0_cntr = transformPt(c0.center);
-  // const _c1_cntr = transformPt(c1.center);
-  // const _c0 = new Circle(_c0_cntr.x, _c0_cntr.y, c0.radius * unit);
-  // const _c1 = new Circle(_c1_cntr.x, _c1_cntr.y, c1.radius * unit);
-  console.log('points >> ', p0, p1);
-  // get distance of the domain of the intersection
-  const pxDist = distance(p0.proj().xp, p1.proj().xp);
-  // num of rectangles to divide the domain of overlap
-  const pxDelta = pxDist / div;
-  // console.log('dist div delta >>', pxDist, div, pxDelta);
-  // generate the points in a list, fist point from p0.x, last point p1.x
-  const xlist = [p0.x];
-  for (let i = 0; i < div - 1; i++) {
-    const prv = xlist[xlist.length - 1];
-    xlist.push(prv + pxDelta);
-  }
-  xlist.push(p1.x);
-  console.log(`pxDelta => ${pxDelta}`);
-  console.log(
-    'xlist => ',
-    xlist.map((v) => +v.toFixed(2))
-  );
-  // produce the corresponding y values on the curves of the intersecting circles
-  // final list of points same length as xlist , eliminate the other y value
-  console.log('range => ', p0.y, p1.y);
-  const y0list = xlist.map((x) =>
-    c0.f(x).filter((pt) => {
-      pt.x = +pt.x.toFixed(2);
-      pt.y = +pt.y.toFixed(2);
-      console.log(
-        `(${pt.x},${pt.y}) => ${pt.y} >= ${p0.y} && ${pt.y} <= ${p1.y} => ${
-          pt.y >= p0.y && pt.y <= p1.y
-        }`
-      );
-      // putPoint(pt.x, pt.y, 'blue', 4);
-      return pt.y >= p0.y && pt.y <= p1.y;
-    })
-  );
-  const y1list = xlist.map((x) => c1.f(x));
-
-  console.log('=> ', y0list);
-  // console.log(y1list);
-}
-
-function pointToAngleRad(pt, toDegree = false) {
-  console.log("incoming => ",pt)
-
-  const quadrantal = (x,y) => {
-    if(y === 0) {
-      if(x > 0) {
-        return 0
-      } else if (x < 0) {
-        return -Math.PI
-      }
-    } else if (x === 0) {
-      if(y > 0) {
-        return 0
-      } else if (y < 0) {
-        return -Math.PI*2
-      }
-    }
-  }
-
-  const getQuadrant = (x, y) => {
-    if (x > 0 && y >= 0) {
-      // 1st
-      console.log("1st quadrant reached")
-      return 0;
-    } else if (x < 0 && y > 0) {
-      // 2nd
-      console.log("second quadrant reached")
-      return -Math.PI;
-    } else if (x < 0 && y < 0) {
-      // 3rd
-      console.log("third quadrant reached")
-      return -Math.PI;
-    } else if (x > 0 && y < 0) {
-      // 4th
-      console.log("third quadrant reached")
-      return -2*Math.PI;
-    } else {
-      return quadrantal(x,y);
-    }
-  }
-
-  const inRad = -(Math.atan(pt.y/pt.x)) + getQuadrant(pt.x, pt.y);
-  console.log(`base => ${Math.atan(pt.y/pt.x)* (180 / Math.PI)}`); 
-  return !toDegree ? inRad : inRad * (180 / Math.PI);
+  return partialArea(p1, p2, c0) + partialArea(p1, p2, c1);
 }
 
 // the angle depends on the size of the radius
 function pointToAngleRad2(c, pt, toDegree = false) {
   //if circle is not centered on the origin, move the circle to the origin.
-  const v1 = new Vector(-c.center.x,-c.center.y);
+  const v1 = new Vector(-c.center.x, -c.center.y);
   const ptt = applyVector(pt, v1);
-  console.log("vector ",v1)
-  console.log("1 pt ", pt)
-  console.log("2 pt",ptt)
-  putPoint(ptt.x,ptt.y,"red");
+  // console.log("vector ",v1)
+  // console.log("1 pt ", pt)
+  // console.log("2 pt",ptt)
+  // putPoint(ptt.x,ptt.y,"red");
 
-  const quadrantal = (x,y) => {
-    if(y === 0) {
-      if(x > 0) {
-        return 0
+  const quadrantal = (x, y) => {
+    if (y === 0) {
+      if (x > 0) {
+        return 0;
       } else if (x < 0) {
-        return -Math.PI
+        return -Math.PI;
       }
     } else if (x === 0) {
-      if(y > 0) {
-        return 0
+      if (y > 0) {
+        return 0;
       } else if (y < 0) {
-        return -Math.PI*2
+        return -Math.PI * 2;
       }
     }
-  }
+  };
 
   const getQuadrant = (x, y) => {
     if (x > 0 && y >= 0) {
       // 1st
-      console.log("1st quadrant reached")
+      console.log('1st quadrant reached');
       return 0;
     } else if (x < 0 && y > 0) {
       // 2nd
-      console.log("second quadrant reached")
+      console.log('second quadrant reached');
       return -Math.PI;
     } else if (x < 0 && y < 0) {
       // 3rd
-      console.log("third quadrant reached")
+      console.log('third quadrant reached');
       return -Math.PI;
     } else if (x > 0 && y < 0) {
       // 4th
-      console.log("third quadrant reached")
-      return -2*Math.PI;
+      console.log('third quadrant reached');
+      return -2 * Math.PI;
     } else {
-      return quadrantal(x,y);
+      return quadrantal(x, y);
     }
-  }
+  };
 
-  const inRad = -(Math.atan(ptt.y/ptt.x)) + getQuadrant(ptt.x, ptt.y);
-  console.log(`base => ${Math.atan(pt.y/pt.x)* (180 / Math.PI)} \ninRad: ${inRad* (180 / Math.PI) }`); 
+  const inRad = -Math.atan(ptt.y / ptt.x) + getQuadrant(ptt.x, ptt.y);
+  // console.log(`base => ${Math.atan(pt.y/pt.x)* (180 / Math.PI)} \ninRad: ${inRad* (180 / Math.PI) }`);
   return !toDegree ? inRad : inRad * (180 / Math.PI);
 }
 
-// console.log(pointToAngleRad2(c1,p0,true));
-// putPoint(p0.x,p0.y,"red");
-// drawCircle2(c1)
-
 // p0, p1 are the intersection of the circles, c0, c1 are the intersecting circles
+//shade all the overlapping pixles, assume p0.x <= p1.x
+// c0 , c1 are circles, and p0, p1 are the points of intersection
 function shadeOverlap(c0, c1, p0, p1) {
   // get c0 and draw a curve from p0 to p1
   let conf1 = {
-    from: pointToAngleRad2(c0,p0),
-    to: pointToAngleRad2(c0,p1),
+    from: pointToAngleRad2(c0, p0),
+    to: pointToAngleRad2(c0, p1),
     counterClockwise: true,
-    color: "Red"
+    color: 'Red',
   };
-  drawCircle2(c0, conf1);
-  ctx.fill()
+  drawCircle(c0, conf1);
+  ctx.fill();
   // get c1 and draw a curve from p1 to p0
   let conf2 = {
-    from: pointToAngleRad2(c1,p1),
-    to: pointToAngleRad2(c1,p0),
+    from: pointToAngleRad2(c1, p1),
+    to: pointToAngleRad2(c1, p0),
     counterClockwise: true,
-    color: "Red"
+    color: 'Red',
   };
-  drawCircle2(c1, conf2);
-  ctx.fill()
-  
+  drawCircle(c1, conf2);
+  ctx.fill();
 }
 
-shadeOverlap(c0, c1, p0, p1);
+// const c0 = new Circle(1, 1, 1);
+// const c1 = new Circle(2, -1, 2);
 
-// const cc = new Circle(0, 0, 1);
-// const fst = new Point(0.9, 0.4358898943540673);
-// const snd = new Point(-0.9, 0.4358898943540673);
-// const trd = new Point(-0.9, -0.4358898943540673);
-// const frz = new Point(0.9, -0.4358898943540673);
-// const px = new Point(1,0);
-// const py = new Point(0,1);
-// const nx = new Point(-1,0);
-// const ny = new Point(0,-1);
+const c0 = new Circle(1, 1, 1);
+const c1 = new Circle(1, -1, 2);
 
-//  let conf = {
-//    from: pointToAngleRad(ny),
-//    to:   pointToAngleRad(px),
-//    counterClockwise: true,
-//  };
-//  drawCircle2(cc, conf);
+// const c0 = new Circle(1, 1, 1);
+// const c1 = new Circle(0, -1, 2);
 
+// const c0 = new Circle(1, 1, 1);
+// const c1 = new Circle(3, 1, 2);
+
+// const c0 = new Circle(1, 1, 1);
+// const c1 = new Circle(-1, 1, 2);
+
+drawCircle(c0);
+drawCircle(c1);
+const { p0, p1 } = calcCircleIntersection(c0, c1);
+console.log(p0,p1);
+// putPoint(p0.x,p0.y,"Red", 3)
+
+// shadeOverlap(c0, c1, p0, p1);
+
+// let y = 5;
+// setInterval(() => console.log(++y), 1000);
