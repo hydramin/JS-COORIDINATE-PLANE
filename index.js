@@ -315,7 +315,7 @@ const a2 = (d / 2) * Math.sqrt(c0.radius ** 2 - (0.5 * d) ** 2);
 // console.log(`area in pixles sq ${(a1 + a2) * 30 * 30}`);
 
 //shade all the overlapping pixles, assume p0.x < p1.x
-function shadeOverlap(c0, c1, p0, p1) {
+function shadeOverlap1(c0, c1, p0, p1) {
   // console.log('input >>>', c0, c1, p0, p1);
   const div = 4;
   // transform points and the circles to pixle representation
@@ -367,50 +367,146 @@ function shadeOverlap(c0, c1, p0, p1) {
 
 function pointToAngleRad(pt, toDegree = false) {
   console.log("incoming => ",pt)
+
+  const quadrantal = (x,y) => {
+    if(y === 0) {
+      if(x > 0) {
+        return 0
+      } else if (x < 0) {
+        return -Math.PI
+      }
+    } else if (x === 0) {
+      if(y > 0) {
+        return 0
+      } else if (y < 0) {
+        return -Math.PI*2
+      }
+    }
+  }
+
   const getQuadrant = (x, y) => {
-    if (x > 0 && y > 0) {
+    if (x > 0 && y >= 0) {
       // 1st
       console.log("1st quadrant reached")
       return 0;
     } else if (x < 0 && y > 0) {
       // 2nd
       console.log("second quadrant reached")
-      return Math.PI;
+      return -Math.PI;
     } else if (x < 0 && y < 0) {
       // 3rd
       console.log("third quadrant reached")
       return -Math.PI;
     } else if (x > 0 && y < 0) {
       // 4th
+      console.log("third quadrant reached")
       return -2*Math.PI;
+    } else {
+      return quadrantal(x,y);
     }
   }
 
-  // const inRad = modifier * (Math.atan(pt.x, pt.y) + getQuadrant(pt.x, pt.y));
   const inRad = -(Math.atan(pt.y/pt.x)) + getQuadrant(pt.x, pt.y);
-  console.log(`base -> ${Math.atan(pt.y/pt.x) * (180 / Math.PI)} \ntodegree - ${toDegree} \ninRad -> ${inRad} \n -->${getQuadrant(pt.x, pt.y)}`)
+  console.log(`base => ${Math.atan(pt.y/pt.x)* (180 / Math.PI)}`); 
   return !toDegree ? inRad : inRad * (180 / Math.PI);
 }
 
-// shadeOverlap(c0, c1, p0, p1);
-const cc = new Circle(0, 0, 1);
-const fst = new Point(0.9, 0.4358898943540673);
-//utPoint(0.9,0.4358898943540673,"red",3)
-const snd = new Point(-0.9, 0.4358898943540673);
-//putPoint(-0.9,0.4358898943540673,"red",3)
-const trd = new Point(-0.9, -0.4358898943540673);
-const frz = new Point(0.9, -0.4358898943540673);
- let conf = {
-   from: pointToAngleRad(snd),
-   to:  pointToAngleRad(trd),
-   counterClockwise: true,
- };
- drawCircle2(cc, conf);
-// console.log(cc.f(0.9))
-// console.log('fst == ==>', pointToAngleRad(fst, true));
-// console.log('snd == ==>', pointToAngleRad(snd, true));
-//console.log('trd == ==>', pointToAngleRad(trd, true));
-// console.log('frz == ==>', pointToAngleRad(frz, true));
+// the angle depends on the size of the radius
+function pointToAngleRad2(c, pt, toDegree = false) {
+  //if circle is not centered on the origin, move the circle to the origin.
+  const v1 = new Vector(-c.center.x,-c.center.y);
+  const ptt = applyVector(pt, v1);
+  console.log("vector ",v1)
+  console.log("1 pt ", pt)
+  console.log("2 pt",ptt)
+  putPoint(ptt.x,ptt.y,"red");
 
-// console.log(0);
-// console.log(Math.atan(0.4358898943540673 / -0.9) * (180 / Math.PI) + 180);
+  const quadrantal = (x,y) => {
+    if(y === 0) {
+      if(x > 0) {
+        return 0
+      } else if (x < 0) {
+        return -Math.PI
+      }
+    } else if (x === 0) {
+      if(y > 0) {
+        return 0
+      } else if (y < 0) {
+        return -Math.PI*2
+      }
+    }
+  }
+
+  const getQuadrant = (x, y) => {
+    if (x > 0 && y >= 0) {
+      // 1st
+      console.log("1st quadrant reached")
+      return 0;
+    } else if (x < 0 && y > 0) {
+      // 2nd
+      console.log("second quadrant reached")
+      return -Math.PI;
+    } else if (x < 0 && y < 0) {
+      // 3rd
+      console.log("third quadrant reached")
+      return -Math.PI;
+    } else if (x > 0 && y < 0) {
+      // 4th
+      console.log("third quadrant reached")
+      return -2*Math.PI;
+    } else {
+      return quadrantal(x,y);
+    }
+  }
+
+  const inRad = -(Math.atan(ptt.y/ptt.x)) + getQuadrant(ptt.x, ptt.y);
+  console.log(`base => ${Math.atan(pt.y/pt.x)* (180 / Math.PI)} \ninRad: ${inRad* (180 / Math.PI) }`); 
+  return !toDegree ? inRad : inRad * (180 / Math.PI);
+}
+
+// console.log(pointToAngleRad2(c1,p0,true));
+// putPoint(p0.x,p0.y,"red");
+// drawCircle2(c1)
+
+// p0, p1 are the intersection of the circles, c0, c1 are the intersecting circles
+function shadeOverlap(c0, c1, p0, p1) {
+  // get c0 and draw a curve from p0 to p1
+  let conf1 = {
+    from: pointToAngleRad2(c0,p0),
+    to: pointToAngleRad2(c0,p1),
+    counterClockwise: true,
+    color: "Red"
+  };
+  drawCircle2(c0, conf1);
+  ctx.fill()
+  // get c1 and draw a curve from p1 to p0
+  let conf2 = {
+    from: pointToAngleRad2(c1,p1),
+    to: pointToAngleRad2(c1,p0),
+    counterClockwise: true,
+    color: "Red"
+  };
+  drawCircle2(c1, conf2);
+  ctx.fill()
+  
+}
+
+shadeOverlap(c0, c1, p0, p1);
+
+// const cc = new Circle(0, 0, 1);
+// const fst = new Point(0.9, 0.4358898943540673);
+// const snd = new Point(-0.9, 0.4358898943540673);
+// const trd = new Point(-0.9, -0.4358898943540673);
+// const frz = new Point(0.9, -0.4358898943540673);
+// const px = new Point(1,0);
+// const py = new Point(0,1);
+// const nx = new Point(-1,0);
+// const ny = new Point(0,-1);
+
+//  let conf = {
+//    from: pointToAngleRad(ny),
+//    to:   pointToAngleRad(px),
+//    counterClockwise: true,
+//  };
+//  drawCircle2(cc, conf);
+
