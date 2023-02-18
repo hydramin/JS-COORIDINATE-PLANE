@@ -218,8 +218,23 @@ function translateCirclesToOrigin(c1, c2) {
 For now function does not accomodate inscribed circle and tangent circle
 returns object {p0:Point, p1:Point} sorted on their x value*/
 function calcCircleIntersection(circle1, circle2) {
-  const { c0, c1, vr } = translateCirclesToOrigin(circle1, circle2);
-  console.log(`asdf`)
+  let { c0, c1, vr } = translateCirclesToOrigin(circle1, circle2);
+  const rotate = Math.PI/2;
+  const reverseRotate = -rotate;
+  let isRotated = false;
+  // checks if c0,c1 have the same y value as center
+  // if true rotate c1 by 90 degrees about the origin
+  if(c0.center.y === c1.center.y) {
+    isRotated = true;
+    const nc0 = rotatePoint(c0.center,rotate);
+    const nc1 = rotatePoint(c1.center,rotate);
+    c0 = new Circle(nc0.x, nc0.y,c0.radius);
+    c1 = new Circle(nc1.x, nc1.y,c1.radius);
+  }
+
+  drawCircle(c0);
+  drawCircle(c1);
+
   const p1 = c1.center.x;
   const p2 = c1.center.y;
   const r1 = c0.radius;
@@ -247,15 +262,18 @@ function calcCircleIntersection(circle1, circle2) {
   ].sort((p1, p2) => p1.x >= p2.x);
 
   // remove duplicates and get the solution values
-  const solSet = potentialCoords.filter((pt, ind, arr) => {
+  let solSet = potentialCoords.filter((pt, ind, arr) => {
     const { x, y } = pt;
     //keep the ones that satisfy x^2 + y^2 = r^2 and the other equation
-    const eq1 = (a, b) => {/*console.log(`a -> ${a}, b -> ${b}`);*/return a ** 2 + b ** 2 === r1 ** 2};
-    const eq2 = (a, b) => {console.log(`a -> ${a}, p1 -> ${p1}, b -> ${b}, p2 -> ${p2}`);return (a - p1) ** 2 + (b - p2) ** 2 === r2 ** 2};
+    const eq1 = (a, b) => +(a ** 2 + b ** 2).toFixed(4) === r1 ** 2;
+    const eq2 = (a, b) => +((a - p1) ** 2 + (b - p2) ** 2).toFixed(4) === r2 ** 2;
     let isNotSeen = ind === arr.findIndex((pt2) => x === pt2.x && y === pt2.y);
     return eq1(x, y) && eq2(x, y) && isNotSeen;
   });
-
+  // if rotated above, then reverse rotate back
+  if(isRotated) {
+    solSet = solSet.map((pt) => rotatePoint(pt,reverseRotate));
+  }
   // loops through list of points and creates the object key dynamically
   const sol = solSet.reduce((acc, nxt, ind) => {
     const _nxt = applyVector(nxt, vr);
@@ -352,11 +370,43 @@ function pointToAngleRad2(c, pt, toDegree = false) {
   return !toDegree ? inRad : inRad * (180 / Math.PI);
 }
 
+/* Rotates a point on the coordinate plane by the given angle theta in radians about the origin
+Returns the rotated Point object*/
+function rotatePoint(point, angle) {
+  const xp = point.x * Math.cos(angle) - point.y * Math.sin(angle);
+  const yp = point.x * Math.sin(angle) + point.y * Math.cos(angle);
+  const newPt = new Point(xp,yp);
+  return newPt;
+}
+
 // p0, p1 are the intersection of the circles, c0, c1 are the intersecting circles
 //shade all the overlapping pixles, assume p0.x <= p1.x
 // c0 , c1 are circles, and p0, p1 are the points of intersection
 function shadeOverlap(c0, c1, p0, p1) {
   // get c0 and draw a curve from p0 to p1
+  /**
+   * Drawing logic: if the x component of the vector from center of c0 to c1 is in the +x 
+   * sort p0,p1 in ascending order and go from the first to the second in counter-clockwise, 
+   * then c1 will to from higher to lower in clockwise; 
+   * if the x vector is negative then go from the higher to the lower point in counterclockwise
+   */
+  const ptArr = [p0,p1].sort((v1,v2) => {
+    const a = +v1.x.toFixed(2);
+    const b = +v2.x.toFixed(2);
+    const c = +v1.y.toFixed(2);
+    const d = +v2.y.toFixed(2);
+    if(a > b) return 1;
+    if(a < b) return -1;
+    if(a === b) { // if x vals are equal, compare y vals
+      if(c > d) return 1;
+      if(c < d) return -1;
+      if(c === d) return 0;
+    }
+  });
+  
+  //x vector from center of c0 to c1, + if to +x, else -ve
+  const xvec = c1.x - c0.x;
+  
   let conf1 = {
     from: pointToAngleRad2(c0, p0),
     to: pointToAngleRad2(c0, p1),
@@ -376,17 +426,21 @@ function shadeOverlap(c0, c1, p0, p1) {
   ctx.fill();
 }
 
+function putPoint2(point,color,size) {
+  putPoint(point.x,point.y,color,size)
+}
+
 // const c0 = new Circle(1, 1, 1);
 // const c1 = new Circle(2, -1, 2);
 
-const c0 = new Circle(1, 1, 1);
-const c1 = new Circle(1, -1, 2);
+// const c0 = new Circle(1, 1, 1);
+// const c1 = new Circle(1, -1, 2);
 
 // const c0 = new Circle(1, 1, 1);
 // const c1 = new Circle(0, -1, 2);
 
-// const c0 = new Circle(1, 1, 1);
-// const c1 = new Circle(3, 1, 2);
+const c0 = new Circle(1, 1, 1);
+const c1 = new Circle(3, 1, 2);
 
 // const c0 = new Circle(1, 1, 1);
 // const c1 = new Circle(-1, 1, 2);
@@ -394,10 +448,10 @@ const c1 = new Circle(1, -1, 2);
 drawCircle(c0);
 drawCircle(c1);
 const { p0, p1 } = calcCircleIntersection(c0, c1);
-console.log(p0,p1);
-// putPoint(p0.x,p0.y,"Red", 3)
+// putPoint2(p0,"red",5)
+// putPoint2(p1,"red",5)
 
-// shadeOverlap(c0, c1, p0, p1);
+shadeOverlap(c0, c1, p0, p1);
 
 // let y = 5;
 // setInterval(() => console.log(++y), 1000);
