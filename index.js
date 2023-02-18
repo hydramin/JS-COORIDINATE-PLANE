@@ -3,6 +3,85 @@
 import './style.css';
 
 // Write Javascript code!
+class CoordinatePlane {
+  constructor(_config) {
+    const defaultConfig = {
+      unit: 30,
+      xlen: 12,
+      ylen: 12,
+    };
+    this.config = { ...defaultConfig, ..._config };
+
+    /*Defining the coordinate system unit length*/
+    this.unit = config.unit;
+    this.xmax = this.unit * this.config.xlen;
+    this.ymax = this.unit * this.config.ylen;
+
+    this.canvas = document.getElementById('canvas');
+    this.canvas.width = xmax;
+    this.canvas.height = ymax;
+
+    this.ctx = canvas.getContext('2d');
+
+    /* Draw the x and y coordinates */
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, ymax / 2);
+    this.ctx.lineTo(xmax, ymax / 2);
+
+    this.ctx.moveTo(xmax / 2, 0);
+    this.ctx.lineTo(xmax / 2, ymax);
+    this.ctx.stroke();
+
+    for (let i = 0; i <= ymax; i += unit) {
+      htick(xmax / 2, i);
+    }
+
+    for (let i = 0; i <= xmax; i += unit) {
+      vtick(i, ymax / 2);
+    }
+
+    // given (0,0) means (xmax/2,ymax/2)
+    // +x means adding to x + n.unit
+    // -x means minusing x - n.unit
+    // put a point (x,y)
+
+    const origin = { x: xmax / 2, y: ymax / 2 };
+  }
+
+  /* put the tick marks for each unit, horizontally and vertically */
+  htick(xo, yo) {
+    ctx.beginPath();
+    ctx.moveTo(xo, yo);
+    ctx.lineWidth = 1;
+    ctx.lineTo(xo + 3, yo);
+    ctx.stroke();
+  }
+
+  vtick(xo, yo) {
+    ctx.beginPath();
+    ctx.moveTo(xo, yo);
+    ctx.lineWidth = 1;
+    ctx.lineTo(xo, yo + 3);
+    ctx.stroke();
+  }
+
+  /* represents a point in the coordinate system, not on the canvas  */
+  Point = class {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+    }
+
+    // projection of the point on the x axis and y axis
+    proj() {
+      return {
+        xp: new Point(this.x, 0),
+        yp: new Point(0, this.y),
+      };
+    }
+  };
+}
+// ===============================
 /*Defining the coordinate system unit length*/
 const unit = 30;
 const xmax = unit * 12;
@@ -219,21 +298,21 @@ For now function does not accomodate inscribed circle and tangent circle
 returns object {p0:Point, p1:Point} sorted on their x value*/
 function calcCircleIntersection(circle1, circle2) {
   let { c0, c1, vr } = translateCirclesToOrigin(circle1, circle2);
-  const rotate = Math.PI/2;
+  const rotate = Math.PI / 2;
   const reverseRotate = -rotate;
   let isRotated = false;
   // checks if c0,c1 have the same y value as center
   // if true rotate c1 by 90 degrees about the origin
-  if(c0.center.y === c1.center.y) {
+  if (c0.center.y === c1.center.y) {
     isRotated = true;
-    const nc0 = rotatePoint(c0.center,rotate);
-    const nc1 = rotatePoint(c1.center,rotate);
-    c0 = new Circle(nc0.x, nc0.y,c0.radius);
-    c1 = new Circle(nc1.x, nc1.y,c1.radius);
+    const nc0 = rotatePoint(c0.center, rotate);
+    const nc1 = rotatePoint(c1.center, rotate);
+    c0 = new Circle(nc0.x, nc0.y, c0.radius);
+    c1 = new Circle(nc1.x, nc1.y, c1.radius);
   }
 
-  drawCircle(c0);
-  drawCircle(c1);
+  // drawCircle(c0);
+  // drawCircle(c1);
 
   const p1 = c1.center.x;
   const p2 = c1.center.y;
@@ -266,13 +345,14 @@ function calcCircleIntersection(circle1, circle2) {
     const { x, y } = pt;
     //keep the ones that satisfy x^2 + y^2 = r^2 and the other equation
     const eq1 = (a, b) => +(a ** 2 + b ** 2).toFixed(4) === r1 ** 2;
-    const eq2 = (a, b) => +((a - p1) ** 2 + (b - p2) ** 2).toFixed(4) === r2 ** 2;
+    const eq2 = (a, b) =>
+      +((a - p1) ** 2 + (b - p2) ** 2).toFixed(4) === r2 ** 2;
     let isNotSeen = ind === arr.findIndex((pt2) => x === pt2.x && y === pt2.y);
     return eq1(x, y) && eq2(x, y) && isNotSeen;
   });
   // if rotated above, then reverse rotate back
-  if(isRotated) {
-    solSet = solSet.map((pt) => rotatePoint(pt,reverseRotate));
+  if (isRotated) {
+    solSet = solSet.map((pt) => rotatePoint(pt, reverseRotate));
   }
   // loops through list of points and creates the object key dynamically
   const sol = solSet.reduce((acc, nxt, ind) => {
@@ -375,7 +455,7 @@ Returns the rotated Point object*/
 function rotatePoint(point, angle) {
   const xp = point.x * Math.cos(angle) - point.y * Math.sin(angle);
   const yp = point.x * Math.sin(angle) + point.y * Math.cos(angle);
-  const newPt = new Point(xp,yp);
+  const newPt = new Point(xp, yp);
   return newPt;
 }
 
@@ -385,31 +465,76 @@ function rotatePoint(point, angle) {
 function shadeOverlap(c0, c1, p0, p1) {
   // get c0 and draw a curve from p0 to p1
   /**
-   * Drawing logic: if the x component of the vector from center of c0 to c1 is in the +x 
-   * sort p0,p1 in ascending order and go from the first to the second in counter-clockwise, 
-   * then c1 will to from higher to lower in clockwise; 
+   * Drawing logic: if the x component of the vector from center of c0 to c1 is in the +x
+   * sort p0,p1 in ascending order and go from the first to the second in counter-clockwise,
+   * then c1 will to from higher to lower in clockwise;
    * if the x vector is negative then go from the higher to the lower point in counterclockwise
    */
-  const ptArr = [p0,p1].sort((v1,v2) => {
+  const ptArrX = [p0, p1].sort((v1, v2) => {
     const a = +v1.x.toFixed(2);
     const b = +v2.x.toFixed(2);
     const c = +v1.y.toFixed(2);
     const d = +v2.y.toFixed(2);
-    if(a > b) return 1;
-    if(a < b) return -1;
-    if(a === b) { // if x vals are equal, compare y vals
-      if(c > d) return 1;
-      if(c < d) return -1;
-      if(c === d) return 0;
+    if (a > b) return 1;
+    if (a < b) return -1;
+    if (a === b) {
+      // if x vals are equal, compare y vals
+      if (c > d) return 1;
+      if (c < d) return -1;
+      if (c === d) return 0;
     }
   });
-  
+
+  const ptArrY = [p0, p1].sort((v1, v2) => {
+    const a = +v1.x.toFixed(2);
+    const b = +v2.x.toFixed(2);
+    const c = +v1.y.toFixed(2);
+    const d = +v2.y.toFixed(2);
+    if (c > d) return 1;
+    if (c < d) return -1;
+    if (c === d) {
+      // if x vals are equal, compare y vals
+      if (a > b) return 1;
+      if (a < b) return -1;
+      if (a === b) return 0;
+    }
+  });
+  const p0x = ptArrX[0];
+  const p1x = ptArrX[1];
+  const p0y = ptArrY[0];
+  const p1y = ptArrY[1];
   //x vector from center of c0 to c1, + if to +x, else -ve
-  const xvec = c1.x - c0.x;
-  
+  const xvec = c1.center.x - c0.center.x;
+  const yvec = c1.center.y - c0.center.y;
+  let from = null;
+  let to = null;
+
+  if (xvec > 0) {
+    // p0y to p1y
+    from = p0y;
+    to = p1y;
+  } else if (xvec < 0) {
+    // p1y to p0y
+    from = p1y;
+    to = p0y;
+  } else {
+    // compare the yvec
+    if (yvec > 0) {
+      // p1x to p0x
+      from = p1x;
+      to = p0x;
+    } else if (yvec < 0) {
+      // p0x to p1x
+      from = p0x;
+      to = p1x;
+    } else {
+      console.error('The circles overlap. just shade the inner circle');
+    }
+  }
+
   let conf1 = {
-    from: pointToAngleRad2(c0, p0),
-    to: pointToAngleRad2(c0, p1),
+    from: pointToAngleRad2(c0, from),
+    to: pointToAngleRad2(c0, to),
     counterClockwise: true,
     color: 'Red',
   };
@@ -417,8 +542,8 @@ function shadeOverlap(c0, c1, p0, p1) {
   ctx.fill();
   // get c1 and draw a curve from p1 to p0
   let conf2 = {
-    from: pointToAngleRad2(c1, p1),
-    to: pointToAngleRad2(c1, p0),
+    from: pointToAngleRad2(c1, to),
+    to: pointToAngleRad2(c1, from),
     counterClockwise: true,
     color: 'Red',
   };
@@ -426,8 +551,8 @@ function shadeOverlap(c0, c1, p0, p1) {
   ctx.fill();
 }
 
-function putPoint2(point,color,size) {
-  putPoint(point.x,point.y,color,size)
+function putPoint2(point, color, size) {
+  putPoint(point.x, point.y, color, size);
 }
 
 // const c0 = new Circle(1, 1, 1);
@@ -436,11 +561,11 @@ function putPoint2(point,color,size) {
 // const c0 = new Circle(1, 1, 1);
 // const c1 = new Circle(1, -1, 2);
 
-// const c0 = new Circle(1, 1, 1);
-// const c1 = new Circle(0, -1, 2);
-
 const c0 = new Circle(1, 1, 1);
-const c1 = new Circle(3, 1, 2);
+const c1 = new Circle(0, -1, 2);
+
+// const c0 = new Circle(1, 1, 1);
+// const c1 = new Circle(3, 1, 2);
 
 // const c0 = new Circle(1, 1, 1);
 // const c1 = new Circle(-1, 1, 2);
