@@ -521,27 +521,84 @@ class Vector {
 // const c0 = new Circle(1, 1, 1);
 // const c1 = new Circle(0, -1, 2);
 
-const c01 = new Circle(1, 1, 1);
-const c02 = new Circle(3, 1, 2);
+// const c01 = new Circle(1, 1, 1);
+// const c02 = new Circle(3, 1, 2);
 
-const c1 = new Circle(-1, 1, 2);
-const c0 = new Circle(1, 1, 1);
+// const c1 = new Circle(-1, 1, 2);
+// const c0 = new Circle(1, 1, 1);
 
-const div = document.getElementById('parent');
+// const div = document.getElementById('parent');
 
-const myPlane = new CoordinatePlane();
-div.appendChild(myPlane.canvas);
-myPlane.putPoint(1, 1, 'Red', 3);
-myPlane.drawCircle(c1);
-myPlane.drawCircle(c0);
-let { p0, p1 } = myPlane.calcCircleIntersection(c0, c1);
-myPlane.shadeOverlap(c0, c1, p0, p1);
+// const myPlane = new CoordinatePlane();
+// div.appendChild(myPlane.canvas);
+// myPlane.putPoint(1, 1, 'Red', 3);
+// myPlane.drawCircle(c1);
+// myPlane.drawCircle(c0);
+// let { p0, p1 } = myPlane.calcCircleIntersection(c0, c1);
+// myPlane.shadeOverlap(c0, c1, p0, p1);
 
-const myPlane2 = new CoordinatePlane();
-div.appendChild(myPlane2.canvas);
-myPlane2.drawCircle(c01);
-myPlane2.drawCircle(c02);
-({ p0, p1 } = myPlane2.calcCircleIntersection(c01, c02));
-myPlane2.shadeOverlap(c01, c02, p0, p1);
+// const myPlane2 = new CoordinatePlane();
+// div.appendChild(myPlane2.canvas);
+// myPlane2.drawCircle(c01);
+// myPlane2.drawCircle(c02);
+// ({ p0, p1 } = myPlane2.calcCircleIntersection(c01, c02));
+// myPlane2.shadeOverlap(c01, c02, p0, p1);
 
 // =========== TESTING CLASS ENDS =======
+
+function circlesIntersect(circle1, circle2) {
+  // Calculate the distance between the centers of the circles
+  const dx = circle1.center.x - circle2.center.x;
+  const dy = circle1.center.y - circle2.center.y;
+  const distance = Math.sqrt(dx**2 + dy**2);
+
+  // Check if the distance is less than the sum of the radii
+  if (distance < circle1.radius + circle2.radius) {
+    return 1;  // The circles intersect
+  } else if (distance == circle1.radius + circle2.radius) {
+    return 0; // tangent
+  } else {
+    return -1;  // The circles do not intersect
+  }
+}
+
+
+const form = document.getElementById('circle-form');
+const checkIntersectionBtn = document.getElementById('check-intersection');
+const coordDisplay = document.getElementById('parent');
+const displayMessage = document.getElementById('message');
+let coordPlane = new CoordinatePlane();
+
+coordDisplay.appendChild(coordPlane.canvas);
+
+checkIntersectionBtn.addEventListener('click', function (event) {
+  event.preventDefault(); // prevent the form submission from refreshing the page
+
+  // Get input values for circle 1
+  let x1 = +document.getElementById('x1').value;  
+  let y1 = +document.getElementById('y1').value;
+  let radius1 = +document.getElementById('radius1').value;
+
+  // Get input values for circle 2
+  let x2 = +document.getElementById('x2').value;
+  let y2 = +document.getElementById('y2').value;
+  let radius2 = +document.getElementById('radius2').value;
+
+  // Check for intersection between the circles
+  let circle1 = new Circle(x1,y1,radius1);
+  let circle2 = new Circle(x2,y2,radius2);
+  let doIntersect = circlesIntersect(circle1, circle2);
+  if(doIntersect == 1) {
+    displayMessage.innerText = "Circles intersect"
+  } else if(doIntersect == 0){
+    displayMessage.innerText = "Circles intersect at a tangent"
+  }else {
+    displayMessage.innerText = "Circle do NOT intersect"
+  }
+
+  // Display the result
+  // ...
+});
+
+// initially load the ui and setup an empty coordinate plane
+//

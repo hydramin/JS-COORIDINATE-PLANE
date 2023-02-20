@@ -5,26 +5,6 @@
 </head>
 <body>
 	<h1>Circle Intersection Checker</h1>
-	<form>
-		<label for="x">Center X-coordinate:</label>
-		<input type="number" id="x" name="x" required><br><br>
-		<label for="y">Center Y-coordinate:</label>
-		<input type="number" id="y" name="y" required><br><br>
-		<label for="radius">Circle Radius:</label>
-		<input type="number" id="radius" name="radius" required><br><br>
-		<input type="submit" value="Check Intersection">
-	</form>
-  
-</body>
-</html>
-
-<!DOCTYPE html>
-<html>
-<head>
-	<title>Circle Intersection Checker</title>
-</head>
-<body>
-	<h1>Circle Intersection Checker</h1>
 	<form id="circle-form">
 		<h2>Circle 1</h2>
 		<label for="x1">Center X-coordinate:</label>
@@ -44,32 +24,9 @@
 		
 		<button type="submit" id="check-intersection">Check Intersection</button>
 	</form>
+	<div class="div" id="message" style="border:1px solid red"></div>
   <div class="div" id="parent" style="border: 1px solid"></div>
 	
-	<script>
-		var form = document.getElementById('circle-form');
-		var checkIntersectionBtn = document.getElementById('check-intersection');
-		
-		checkIntersectionBtn.addEventListener('click', function(event) {
-			event.preventDefault(); // prevent the form submission from refreshing the page
-			
-			// Get input values for circle 1
-			var x1 = document.getElementById("x1").value;
-			var y1 = document.getElementById("y1").value;
-			var radius1 = document.getElementById("radius1").value;
-			
-			// Get input values for circle 2
-			var x2 = document.getElementById("x2").value;
-			var y2 = document.getElementById("y2").value;
-			var radius2 = document.getElementById("radius2").value;
-			
-			// Check for intersection between the circles
-			// ...
-			
-			// Display the result
-			// ...
-		});
-	</script>
 </body>
 </html>
 
