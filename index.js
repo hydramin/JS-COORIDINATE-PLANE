@@ -274,13 +274,13 @@ class CoordinatePlane {
   // assumes the circles are intersecting at 2 points
   // takes the p1,p2, intersection points of the circles and c0,c1 two circles.
   intersectionArea(p1, p2, c0, c1) {
-    const d = distance(p1, p2);
-
-    const partialArea = (c) => {
+    const partialArea = (p1, p2, c) => {
+      const d = this.distance(p1, p2);
       const th1 = Math.asin(d / (2 * c.radius)) * 2;
       const sectorArea = (th1 * c.radius ** 2) / 2;
       const triangleArea = (d / 2) * Math.sqrt(c.radius ** 2 - (0.5 * d) ** 2);
       const at = sectorArea - triangleArea;
+      return at;
     };
 
     return partialArea(p1, p2, c0) + partialArea(p1, p2, c1);
@@ -546,22 +546,39 @@ class Vector {
 
 // =========== TESTING CLASS ENDS =======
 
+function initialize() {
+  // Get input values for circle 1
+  document.getElementById('x1').value = '1';
+  document.getElementById('y1').value = '1';
+  document.getElementById('radius1').value = '1';
+
+  // Get input values for circle 2
+  document.getElementById('x2').value = '3';
+  document.getElementById('y2').value = '1';
+  document.getElementById('radius2').value = '1';
+}
+
+initialize();
+
 function circlesIntersect(circle1, circle2) {
   // Calculate the distance between the centers of the circles
   const dx = circle1.center.x - circle2.center.x;
   const dy = circle1.center.y - circle2.center.y;
-  const distance = Math.sqrt(dx**2 + dy**2);
+  const distance = Math.sqrt(dx ** 2 + dy ** 2);
 
   // Check if the distance is less than the sum of the radii
   if (distance < circle1.radius + circle2.radius) {
-    return 1;  // The circles intersect
+    return 1; // The circles intersect
   } else if (distance == circle1.radius + circle2.radius) {
     return 0; // tangent
   } else {
-    return -1;  // The circles do not intersect
+    return -1; // The circles do not intersect
   }
 }
 
+function d2(f) {
+  return +f.toFixed(2);
+}
 
 const form = document.getElementById('circle-form');
 const checkIntersectionBtn = document.getElementById('check-intersection');
@@ -571,11 +588,17 @@ let coordPlane = new CoordinatePlane();
 
 coordDisplay.appendChild(coordPlane.canvas);
 
-checkIntersectionBtn.addEventListener('click', function (event) {
+checkIntersectionBtn.addEventListener('click', eventHandler);
+
+function eventHandler(event) {
   event.preventDefault(); // prevent the form submission from refreshing the page
 
+  function msgDisplay(msg) {
+    displayMessage.innerText = msg;
+  }
+
   // Get input values for circle 1
-  let x1 = +document.getElementById('x1').value;  
+  let x1 = +document.getElementById('x1').value;
   let y1 = +document.getElementById('y1').value;
   let radius1 = +document.getElementById('radius1').value;
 
@@ -585,20 +608,75 @@ checkIntersectionBtn.addEventListener('click', function (event) {
   let radius2 = +document.getElementById('radius2').value;
 
   // Check for intersection between the circles
-  let circle1 = new Circle(x1,y1,radius1);
-  let circle2 = new Circle(x2,y2,radius2);
-  let doIntersect = circlesIntersect(circle1, circle2);
-  if(doIntersect == 1) {
-    displayMessage.innerText = "Circles intersect"
-  } else if(doIntersect == 0){
-    displayMessage.innerText = "Circles intersect at a tangent"
-  }else {
-    displayMessage.innerText = "Circle do NOT intersect"
+  let c1 = new Circle(x1, y1, radius1);
+  let c2 = new Circle(x2, y2, radius2);
+  let doIntersect = circlesIntersect(c1, c2);
+
+  if (doIntersect == 1) {
+    displayMessage.innerText = 'Circles intersect';
+    //TODO - if circles are too large, scale the coordinate plane to
+    // fit the circles
+    coordPlane.refreshCanvas();
+    // draw the circles
+    coordPlane.drawCircle(c1);
+    coordPlane.drawCircle(c2);
+    // calculate intersection points and draw them
+    let { p0, p1 } = coordPlane.calcCircleIntersection(c1, c2);
+    // calculate the area of intersection
+    const area = coordPlane.intersectionArea(p0, p1, c1, c2);
+    // shade the area of intersection
+    coordPlane.shadeOverlap(c1, c2, p0, p1);
+    // display a message showing, points of intersection, area
+    const msg = `Circles intersect at (${d2(p0.x)},${d2(p0.y)}) and (${d2(
+      p1.x
+    )},${d2(p1.y)}). \nShaded area is ${d2(area)} sq units.`;
+    msgDisplay(msg);
+  } else if (doIntersect == 0) {
+    coordPlane.drawCircle(c1);
+    coordPlane.drawCircle(c2);
+    const { p0, p1 } = coordPlane.calcCircleIntersection(c1, c2);
+    msgDisplay(`Circles intersect at a tangent: (${d2(p0.x)},${d2(p0.y)})`);
+    return;
+  } else {
+    coordPlane.drawCircle(c1);
+    coordPlane.drawCircle(c2);
+    msg = 'Circle do NOT intersect';
+    msgDisplay(msg);
+    return;
   }
+}
 
-  // Display the result
-  // ...
-});
+// have one circle rotate around in a circular path
+// have the center of the rotating circle follow a circular path
+function animatedIntersection() {
+  const c0 = new Circle(0, 0, 1);
+  const c1 = new Circle(1, 0, 1);
+  const path = new Circle(0, 0, 1);
 
-// initially load the ui and setup an empty coordinate plane
-//
+  coordPlane.drawCircle(c0);
+  coordPlane.drawCircle(c1);
+  coordPlane.drawCircle(path);
+
+  // console.log(range(0,(180/Math.PI)*Math.PI*2,(180/Math.PI)*Math.PI/2));
+  const circles = range(0, Math.PI * 2, (2 * Math.PI) / 60).map((ang) => {
+    const pt = coordPlane.rotatePoint(c1.center, ang);
+    return new Circle(d2(pt.x), d2(pt.y), d2(c1.radius));
+  });
+
+  console.log(circles);
+  let count = 0;
+  let intervalId = setInterval(() => {
+    let cc = circles[count++];
+    coordPlane.refreshCanvas();
+    coordPlane.drawCircle(c0);
+    coordPlane.drawCircle(cc);
+    const { p0, p1 } = coordPlane.calcCircleIntersection(c0, cc);
+    coordPlane.shadeOverlap(c0, cc, p0, p1);
+    if (count > circles.length - 1) clearInterval(intervalId);
+  }, 50);
+}
+
+const range = (start, stop, step) =>
+  Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step);
+
+animatedIntersection();
